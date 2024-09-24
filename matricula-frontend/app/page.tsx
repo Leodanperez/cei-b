@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import axios from "axios";
-import { Button, Modal } from "react-bootstrap";
+import { Button, Form, InputGroup, Modal } from "react-bootstrap";
+import FeatherIcon from "feather-icons-react";
 
 const axiosInstance = axios.create({
   baseURL: "http://localhost:5454",
@@ -35,6 +36,10 @@ export default function Home() {
     const { name, value } = e.target;
     setBanco({ ...banco, [name]: value.toUpperCase() });
   };
+
+  const crearBanco = async (e: FormEvent<HTMLFormElement>) => {
+    
+  }
 
   useEffect(() => {
     //funcion de flecha
@@ -81,42 +86,68 @@ export default function Home() {
 
       <Modal show={openModal} onHide={handleCerrar}>
         <Modal.Header closeButton>
-          <Modal.Title>Agregar Bancos</Modal.Title>
+          <Modal.Title>Agregar Banco</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <input
-            type="text"
-            className="form-control shadow-none"
-            placeholder="Ingrese banco"
-            id="nombre"
-            name="nombre"
-            value={banco.nombre}
-          />
-          <input
-            type="text"
-            className="form-control shadow-none"
-            placeholder="Ingrese direccion"
-            id="direccion"
-            name="direccion"
-            value={banco.direccion}
-          />
-          <input
-            type="text"
-            className="form-control shadow-none"
-            placeholder="Ingrese codigo"
-            id="codigo"
-            name="codigo"
-            value={banco.codigo}
-          />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="outline-danger" onClick={handleCerrar}>
-            Cerrar
-          </Button>
-          <Button variant="outline-primary" onClick={handleCerrar}>
-            Guardar
-          </Button>
-        </Modal.Footer>
+
+        <Form noValidate onSubmit={crearBanco}>
+          <Modal.Body>
+
+            <Form.Label className="form-label">BANCO</Form.Label>
+            <InputGroup className="mb-3">
+              <InputGroup.Text id="basic-addon1">
+                <FeatherIcon icon="home" />
+              </InputGroup.Text>
+              <Form.Control
+                autoFocus
+                type="text"
+                placeholder="Nombre del banco"
+                name="nombre"
+                value={banco.nombre}
+                onChange={handleChange}
+                required
+              />
+            </InputGroup>
+
+            <Form.Label className="form-label">DIRECCIÓN</Form.Label>
+            <InputGroup className="mb-3">
+              <InputGroup.Text id="basic-addon1">
+                <FeatherIcon icon="framer" />
+              </InputGroup.Text>
+              <Form.Control
+                type="text"
+                placeholder="Dirección del banco"
+                name="direccion"
+                value={banco.direccion}
+                onChange={handleChange}
+                required
+              />
+            </InputGroup>
+
+            <Form.Label className="form-label">CODIGO</Form.Label>
+            <InputGroup className="mb-3">
+              <InputGroup.Text id="basic-addon1">
+                <FeatherIcon icon="tag" />
+              </InputGroup.Text>
+              <Form.Control
+                type="text"
+                placeholder="Código"
+                name="codigo"
+                value={banco.codigo}
+                onChange={handleChange}
+                required
+              />
+            </InputGroup>
+
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-danger" onClick={handleCerrar}>
+              Cerrar
+            </Button>
+            <Button variant="outline-primary" onClick={handleCerrar}>
+              Guardar
+            </Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
     </>
   );
