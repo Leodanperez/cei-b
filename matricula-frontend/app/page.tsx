@@ -81,7 +81,7 @@ export default function Home() {
 
       <Modal show={openModal} onHide={handleCerrar}>
         <Modal.Header closeButton>
-          <Modal.Title>Agregar Banco</Modal.Title>
+          <Modal.Title>Agregar Bancos</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <input
