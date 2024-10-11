@@ -1,8 +1,10 @@
 "use client";
 
+import fetchData from "@/app/components/api/apiData";
 import Breadcrumb from "@/app/components/Breadcrumb";
+import showToast from "@/app/components/utils/toastify";
 import FeatherIcon from "feather-icons-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   Button,
   Form,
@@ -12,10 +14,19 @@ import {
   Spinner,
   Table,
 } from "react-bootstrap";
+import { ToastContainer } from "react-toastify";
+
+type IBanco = {
+  id: number;
+  codigo: string;
+  direccion: string;
+  nombre: string;
+};
 
 const Banco = () => {
   const [esModoEditar, setEsModoEditar] = useState<boolean>(false);
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const [listaBancos, setListBancos] = useState<IBanco[] | null>(null);
   const [banco, setBanco] = useState({
     nombre: "",
     direccion: "",
@@ -34,12 +45,37 @@ const Banco = () => {
     setBanco({ ...banco, [name]: value.toUpperCase() });
   };
 
-  const crearBanco = async (e: FormEvent<HTMLFormElement>) => {};
+  const crearBanco = async (e: FormEvent<HTMLFormElement>) => {
+    const form = e.currentTarget;
+    if (form.checkValidity() === false) {
+      // aplicar logica de validaciones
+    }
+
+    e.preventDefault();
+
+    const resultado = await fetchData<any>("/crear-banco", {
+      method: "POST",
+      data: banco,
+    });
+
+    showToast({ message: resultado.message, type: "success" });
+    obtnerBancos();
+    handleCerrar();
+  };
 
   const handleEditar = () => {
     setEsModoEditar(true);
     setOpenModal(true);
   };
+
+  const obtnerBancos = async () => {
+    const resultado = await fetchData<any>("/obtener-bancos");
+    setListBancos(resultado);
+  };
+
+  useEffect(() => {
+    obtnerBancos();
+  }, []);
 
   return (
     <>
@@ -75,34 +111,39 @@ const Banco = () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="centered-cell">1</td>
-              <td className="centered-cell">BCP</td>
-              <td className="centered-cell">LIMA - PACHACAMAC</td>
-              <td className="centered-cell">BCP2024</td>
-              <td className="centered-cell text-center">
-                <Button
-                  variant="primary-outline"
-                  type="submit"
-                  className="btn btn-outline-primary btn-sm"
-                  onClick={handleEditar}
-                >
-                  <FeatherIcon icon="edit-2" />
-                </Button>
-                <Button
-                  variant="danger-outline"
-                  type="submit"
-                  className="btn btn-outline-danger btn-sm ms-2"
-                >
-                  <FeatherIcon icon="trash-2" />
-                </Button>
-              </td>
-            </tr>
-            <tr>
-              <td colSpan={5} className="text-center">
-                <Spinner animation="border" variant="primary" />
-              </td>
-            </tr>
+            {listaBancos ? (
+              listaBancos.map((banco, index) => (
+                <tr key={banco.id}>
+                  <td className="centered-cell">{banco.id}</td>
+                  <td className="centered-cell">{banco.nombre}</td>
+                  <td className="centered-cell">{banco.direccion}</td>
+                  <td className="centered-cell">{banco.codigo}</td>
+                  <td className="centered-cell text-center">
+                    <Button
+                      variant="primary-outline"
+                      type="submit"
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={handleEditar}
+                    >
+                      <FeatherIcon icon="edit-2" />
+                    </Button>
+                    <Button
+                      variant="danger-outline"
+                      type="submit"
+                      className="btn btn-outline-danger btn-sm ms-2"
+                    >
+                      <FeatherIcon icon="trash-2" />
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="text-center">
+                  <Spinner animation="border" variant="primary" />
+                </td>
+              </tr>
+            )}
           </tbody>
         </Table>
         <Pagination className="justify-content-end">
@@ -189,12 +230,13 @@ const Banco = () => {
             <Button variant="outline-danger" onClick={handleCerrar}>
               Cerrar
             </Button>
-            <Button variant="outline-primary" onClick={handleCerrar}>
+            <Button variant="outline-primary" type="submit">
               Guardar
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
+      <ToastContainer />
     </>
   );
 };
