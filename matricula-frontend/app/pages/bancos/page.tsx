@@ -2,9 +2,10 @@
 
 import fetchData from "@/app/components/api/apiData";
 import Breadcrumb from "@/app/components/Breadcrumb";
+import Paginator from "@/app/components/pagination";
 import showToast from "@/app/components/utils/toastify";
 import FeatherIcon from "feather-icons-react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   Button,
   Form,
@@ -15,27 +16,58 @@ import {
   Table,
 } from "react-bootstrap";
 import { ToastContainer } from "react-toastify";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
-type IBanco = {
+type Banco = {
   id: number;
   codigo: string;
   direccion: string;
   nombre: string;
 };
 
+type IBanco = {
+  data: Banco[];
+  page: number;
+  perPage: number;
+  total: number;
+  lastPage: number;
+};
+
+type DtoResponse = {
+  status: number;
+  message: string;
+};
+
 const Banco = () => {
   const [esModoEditar, setEsModoEditar] = useState<boolean>(false);
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const [listaBancos, setListBancos] = useState<IBanco[] | null>(null);
+  const [listaBancos, setListBancos] = useState<Banco[] | null>(null);
+  const [buscar, setBuscar] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
+  const [perPage] = useState<number>(5);
+  const [total, setTotal] = useState<number>(0);
+  const [lastPage, setLastPage] = useState<number>(1);
+  const [seleccionarBancoId, setSeleccionarBancoId] = useState<number | null>(
+    null
+  );
   const [banco, setBanco] = useState({
     nombre: "",
     direccion: "",
     codigo: "",
   });
 
+  const MySwal = withReactContent(Swal);
+
   const handleCerrar = () => {
     setOpenModal(false);
+    setSeleccionarBancoId(null);
     setEsModoEditar(false);
+    setBanco({
+      nombre: "",
+      direccion: "",
+      codigo: "",
+    });
   };
 
   const handleAbrirModal = () => setOpenModal(true);
@@ -53,29 +85,96 @@ const Banco = () => {
 
     e.preventDefault();
 
-    const resultado = await fetchData<any>("/crear-banco", {
-      method: "POST",
-      data: banco,
-    });
+    try {
+      if (esModoEditar && seleccionarBancoId) {
+        const resultado = await fetchData<DtoResponse>(
+          `/actualizar-banco/${seleccionarBancoId}`,
+          {
+            method: "PUT",
+            data: banco,
+          }
+        );
 
-    showToast({ message: resultado.message, type: "success" });
-    obtnerBancos();
-    handleCerrar();
+        showToast({ message: resultado.message, type: "success" });
+      } else {
+        const resultado = await fetchData<DtoResponse>("/crear-banco", {
+          method: "POST",
+          data: banco,
+        });
+
+        showToast({ message: resultado.message, type: "success" });
+      }
+      obtnerBancos(buscar, page);
+      handleCerrar();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleEditar = () => {
+  const handleEditar = (banco: Banco) => {
     setEsModoEditar(true);
+    setSeleccionarBancoId(banco.id);
+    setBanco({
+      nombre: banco.nombre,
+      direccion: banco.direccion,
+      codigo: banco.codigo,
+    });
     setOpenModal(true);
   };
 
-  const obtnerBancos = async () => {
-    const resultado = await fetchData<any>("/obtener-bancos");
-    setListBancos(resultado);
+  const handleEliminar = async (id: number) => {
+    MySwal.fire({
+      title: "¿Estas seguro de eliminar?",
+      text: "No podrás revertir esto!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar!",
+      cancelButtonText: "Cancelar",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const resultado = await fetchData<DtoResponse>(
+          `/eliminar-banco/${id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        showToast({ message: resultado.message, type: "success" });
+        obtnerBancos(buscar, page);
+      }
+    });
+  };
+
+  const obtnerBancos = useCallback(
+    async (buscar: string, page: number) => {
+      try {
+        const resultado = await fetchData<IBanco>(
+          `/obtener-bancos?nombre=${buscar}&page=${page}&perPage=${perPage}`
+        );
+        setListBancos(resultado.data);
+        setTotal(resultado.total);
+        setLastPage(resultado.lastPage);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [perPage]
+  );
+
+  const handleBuscarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBuscar(e.target.value);
+    setPage(1);
   };
 
   useEffect(() => {
-    obtnerBancos();
-  }, []);
+    obtnerBancos(buscar, page);
+  }, [buscar, obtnerBancos, page]);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
   return (
     <>
@@ -94,6 +193,8 @@ const Banco = () => {
           className="form-control w-50"
           type="text"
           placeholder="Buscar bancos..."
+          value={buscar}
+          onChange={handleBuscarChange}
         />
       </div>
 
@@ -114,7 +215,9 @@ const Banco = () => {
             {listaBancos ? (
               listaBancos.map((banco, index) => (
                 <tr key={banco.id}>
-                  <td className="centered-cell">{banco.id}</td>
+                  <td className="centered-cell">
+                    {(page - 1) * perPage + index + 1}
+                  </td>
                   <td className="centered-cell">{banco.nombre}</td>
                   <td className="centered-cell">{banco.direccion}</td>
                   <td className="centered-cell">{banco.codigo}</td>
@@ -123,7 +226,7 @@ const Banco = () => {
                       variant="primary-outline"
                       type="submit"
                       className="btn btn-outline-primary btn-sm"
-                      onClick={handleEditar}
+                      onClick={() => handleEditar(banco)}
                     >
                       <FeatherIcon icon="edit-2" />
                     </Button>
@@ -131,6 +234,7 @@ const Banco = () => {
                       variant="danger-outline"
                       type="submit"
                       className="btn btn-outline-danger btn-sm ms-2"
+                      onClick={() => handleEliminar(banco.id)}
                     >
                       <FeatherIcon icon="trash-2" />
                     </Button>
@@ -146,23 +250,11 @@ const Banco = () => {
             )}
           </tbody>
         </Table>
-        <Pagination className="justify-content-end">
-          <Pagination.First />
-          <Pagination.Prev />
-          <Pagination.Item>{1}</Pagination.Item>
-          <Pagination.Ellipsis />
-
-          <Pagination.Item>{10}</Pagination.Item>
-          <Pagination.Item>{11}</Pagination.Item>
-          <Pagination.Item active>{12}</Pagination.Item>
-          <Pagination.Item>{13}</Pagination.Item>
-          <Pagination.Item disabled>{14}</Pagination.Item>
-
-          <Pagination.Ellipsis />
-          <Pagination.Item>{20}</Pagination.Item>
-          <Pagination.Next />
-          <Pagination.Last />
-        </Pagination>
+        <Paginator
+          currentPage={page}
+          lastPage={lastPage}
+          onPageChange={handlePageChange}
+        />
       </div>
 
       <Modal
