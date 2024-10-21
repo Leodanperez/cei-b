@@ -40,6 +40,7 @@ type DtoResponse = {
 };
 
 const Banco = () => {
+  const [validated, setValidated] = useState<boolean>(false);
   const [esModoEditar, setEsModoEditar] = useState<boolean>(false);
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [listaBancos, setListBancos] = useState<Banco[] | null>(null);
@@ -63,6 +64,7 @@ const Banco = () => {
     setOpenModal(false);
     setSeleccionarBancoId(null);
     setEsModoEditar(false);
+    setValidated(false);
     setBanco({
       nombre: "",
       direccion: "",
@@ -72,15 +74,41 @@ const Banco = () => {
 
   const handleAbrirModal = () => setOpenModal(true);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setBanco({ ...banco, [name]: value.toUpperCase() });
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    const date = new Date();
+
+    //Obtener anio, dia
+    const year = date.getFullYear().toString();
+    const day = date.getDate().toString();
+
+    let code = banco.codigo;
+
+    if (name === "nombre") {
+      const bankCode = value
+        .split(" ")
+        .map((word) => word.charAt(0))
+        .join("")
+        .toUpperCase();
+
+      code = bankCode + day + year;
+    }
+
+    setBanco({ ...banco, [name]: value.toUpperCase(), codigo: code });
   };
 
   const crearBanco = async (e: FormEvent<HTMLFormElement>) => {
     const form = e.currentTarget;
     if (form.checkValidity() === false) {
       // aplicar logica de validaciones
+      e.preventDefault();
+      e.stopPropagation();
+      setValidated(true);
+      return;
+      /* if (!banco.nombre || !banco.direccion || !banco.codigo) {
+        showToast({ message: "Campos obligatorios", type: "warning" });
+        return;
+      } */
     }
 
     e.preventDefault();
@@ -270,7 +298,7 @@ const Banco = () => {
           </Modal.Title>
         </Modal.Header>
 
-        <Form noValidate onSubmit={crearBanco}>
+        <Form noValidate validated={validated} onSubmit={crearBanco}>
           <Modal.Body>
             <Form.Label className="form-label">BANCO</Form.Label>
             <InputGroup className="mb-3">
@@ -286,6 +314,9 @@ const Banco = () => {
                 onChange={handleChange}
                 required
               />
+              <Form.Control.Feedback type="invalid">
+                Por favor ingrese el nombre del banco
+              </Form.Control.Feedback>
             </InputGroup>
 
             <Form.Label className="form-label">DIRECCIÓN</Form.Label>
@@ -301,6 +332,9 @@ const Banco = () => {
                 onChange={handleChange}
                 required
               />
+              <Form.Control.Feedback type="invalid">
+                Por favor ingrese la direccion
+              </Form.Control.Feedback>
             </InputGroup>
 
             <Form.Label className="form-label">CODIGO</Form.Label>
@@ -314,8 +348,12 @@ const Banco = () => {
                 name="codigo"
                 value={banco.codigo}
                 onChange={handleChange}
+                disabled={true}
                 required
               />
+              <Form.Control.Feedback type="invalid">
+                Por favor ingrese el codigo
+              </Form.Control.Feedback>
             </InputGroup>
           </Modal.Body>
           <Modal.Footer>
@@ -323,7 +361,7 @@ const Banco = () => {
               Cerrar
             </Button>
             <Button variant="outline-primary" type="submit">
-              Guardar
+              {esModoEditar ? "Editar Banco" : "Agregar Banco"}
             </Button>
           </Modal.Footer>
         </Form>
