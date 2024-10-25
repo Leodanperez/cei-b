@@ -46,9 +46,10 @@ const Banco = () => {
   const [listaBancos, setListBancos] = useState<Banco[] | null>(null);
   const [buscar, setBuscar] = useState<string>("");
   const [page, setPage] = useState<number>(1);
-  const [perPage] = useState<number>(5);
+  const [perPage, setPerPage] = useState<number>(5);
   const [total, setTotal] = useState<number>(0);
   const [lastPage, setLastPage] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(false);
   const [seleccionarBancoId, setSeleccionarBancoId] = useState<number | null>(
     null
   );
@@ -130,7 +131,11 @@ const Banco = () => {
           data: banco,
         });
 
-        showToast({ message: resultado.message, type: "success" });
+        if (resultado.status === 422) {
+          showToast({ message: resultado.message, type: "error" });
+        } else {
+          showToast({ message: resultado.message, type: "success" });
+        }
       }
       obtnerBancos(buscar, page);
       handleCerrar();
@@ -196,12 +201,83 @@ const Banco = () => {
     setPage(1);
   };
 
+  const handlePerPage = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPerPage(Number(e.target.value));
+    setPage(1);
+  };
+
   useEffect(() => {
     obtnerBancos(buscar, page);
   }, [buscar, obtnerBancos, page]);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+  };
+
+  const descargarExcel = async () => {
+    try {
+      setLoading(true);
+      const resultado = await fetchData<any>(`/exportar-excel`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/vnd.ms-excel",
+        },
+        responseType: "blob",
+      });
+
+      console.log(resultado);
+
+      if (!resultado) {
+        showToast({ message: "Error al descargar el archuvo", type: "error" });
+      }
+
+      const blob = new Blob([resultado], { type: "application/vnd.ms-excel" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bancos.xls";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const descargarPdf = async () => {
+    try {
+      setLoading(true);
+      const resultado = await fetchData<any>(`/reporte`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/vnd.ms-excel",
+        },
+        responseType: "blob",
+      });
+
+      console.log(resultado);
+
+      if (!resultado) {
+        showToast({ message: "Error al descargar el archuvo", type: "error" });
+      }
+
+      const blob = new Blob([resultado], { type: "application/vnd.ms-excel" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bancos.xls";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -217,6 +293,16 @@ const Banco = () => {
           <FeatherIcon icon="plus" />
           Agregar Banco
         </Button>
+        <Form.Select
+          className="form-select w-25"
+          value={perPage}
+          onChange={handlePerPage}
+        >
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </Form.Select>
         <Form.Control
           className="form-control w-50"
           type="text"
@@ -224,6 +310,15 @@ const Banco = () => {
           value={buscar}
           onChange={handleBuscarChange}
         />
+        <Button
+          variant="warning-outline"
+          className="btn btn-outline-warning "
+          onClick={descargarExcel}
+          disabled={loading}
+        >
+          <FeatherIcon icon="download" size={20} className="me-2" />
+          {loading ? "Descargando..." : "Descargar"}
+        </Button>
       </div>
 
       <div className="table-responsive">
