@@ -1,6 +1,10 @@
 package pe.edu.trentino.matricula.controllers;
 
+import com.itextpdf.text.DocumentException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.edu.trentino.matricula.dto.BancoDto;
@@ -8,6 +12,8 @@ import pe.edu.trentino.matricula.dto.PaginateResponseDto;
 import pe.edu.trentino.matricula.dto.ResponseDto;
 import pe.edu.trentino.matricula.services.BancoService;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Collections;
 
 @RequiredArgsConstructor
@@ -39,5 +45,30 @@ public class BancoController {
     @DeleteMapping("/eliminar-banco/{bancoId}")
     public ResponseDto eliminarBanco(@PathVariable(name = "bancoId") Long bancoId) {
         return bancoService.elimarBanco(bancoId);
+    }
+
+    @GetMapping("/exportar-excel")
+    public void exportarExcel(HttpServletResponse response) throws IOException {
+        bancoService.descargarBanco(response);
+    }
+
+    @GetMapping(value = "/reporte", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateBancoReport() {
+
+        ByteArrayInputStream bis;
+        try {
+            bis = bancoService.generarPdf();
+        } catch (DocumentException e) {
+            return ResponseEntity.status(500).body(null);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "inline; filename=banco_reporte.pdf");
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bis.readAllBytes());
     }
 }
