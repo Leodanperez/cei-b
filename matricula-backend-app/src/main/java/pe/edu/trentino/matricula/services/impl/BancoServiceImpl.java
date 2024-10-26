@@ -125,7 +125,7 @@ public class BancoServiceImpl implements BancoService {
         HSSFSheet sheet = workbook.createSheet("Bancos");
 
         /* Configuramos ancho columna 1, las otras ya quedan bien por defecto */
-        sheet.setColumnWidth(0, 5000);
+        sheet.setColumnWidth(0, 3000);
         sheet.setColumnWidth(1, 5000);
         sheet.setColumnWidth(2, 5000);
         sheet.setColumnWidth(3, 5000);
