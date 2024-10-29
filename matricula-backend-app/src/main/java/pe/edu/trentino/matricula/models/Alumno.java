@@ -1,5 +1,6 @@
 package pe.edu.trentino.matricula.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -28,4 +31,9 @@ public class Alumno {
     private LocalDate fechaNac;
 
     private String genero;
+    @OneToMany(mappedBy = "alumno", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Matricula> matriculas;
+
+    @JsonIgnore
+    private LocalDateTime createdAt;
 }

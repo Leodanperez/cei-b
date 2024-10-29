@@ -3,6 +3,8 @@ package pe.edu.trentino.matricula.models;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,4 +18,7 @@ public class Banco {
     private String nombre;
     private String direccion;
     private String codigo;
+
+    @OneToMany(mappedBy = "banco")
+    private List<Pago> pagos;
 }

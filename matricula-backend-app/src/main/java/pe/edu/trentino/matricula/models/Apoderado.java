@@ -1,7 +1,11 @@
 package pe.edu.trentino.matricula.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -21,4 +25,10 @@ public class Apoderado {
     private String email;
 
     private String telefono;
+
+    @OneToMany(mappedBy = "apoderado", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Matricula> matriculas;
+
+    @JsonIgnore
+    private LocalDateTime createdAt;
 }
