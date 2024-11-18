@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import pe.edu.trentino.matricula.dto.MatriculaDto;
 import pe.edu.trentino.matricula.models.Matricula;
 
+import java.util.Optional;
+
 public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
     @Query("SELECT new pe.edu.trentino.matricula.dto.MatriculaDto(" +
             "m.id, " +
@@ -23,4 +25,7 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
     Page<MatriculaDto> buscarMatriculaPorNombredeAlumno(
             @Param("nombres") String nombres, Pageable pageable
     );
+
+    // Buscar un alumno por codigo de estudiante
+    Optional<Matricula> findByCodigo(String codigo);
 }

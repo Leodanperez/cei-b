@@ -82,3 +82,7 @@ body {
 .active {
     color: #7367f0 !important;
 }
+
+.w-25 {
+    width: 8% !important;
+}
