@@ -2,7 +2,7 @@
 
 import Breadcrumb from "@/app/components/Breadcrumb";
 import FeatherIcon from "feather-icons-react";
-import React, { useState } from "react";
+import React, { ChangeEvent, useState } from "react";
 import {
   Button,
   Col,
@@ -21,6 +21,18 @@ const Matricula = () => {
   const handleCloaseModal = () => setOpenModal(false);
   const handleOpenModalDetail = () => setOpenModalDetail(true);
   const handleCloseModalDetail = () => setOpenModalDetail(false);
+
+  const [value, setValue] = useState<string>("");
+
+  const buscarPorDni = (e: ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+
+    // Expresion regular
+    if (/^\d{0,8}$/.test(inputValue)) {
+        setValue(inputValue);
+    }
+  }
+
   return (
     <>
       <Breadcrumb title="Matricula" />
@@ -150,6 +162,8 @@ const Matricula = () => {
                     type="text"
                     placeholder="DNI del estudiante"
                     name="nombre"
+                    value={value}
+                    onChange={buscarPorDni}
                     required
                   />
                   <Button variant="outline-primary">
