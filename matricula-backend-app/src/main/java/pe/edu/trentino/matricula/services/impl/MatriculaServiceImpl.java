@@ -41,9 +41,16 @@ public class MatriculaServiceImpl implements MatriculaService {
                     .orElseThrow(()
                             -> new HandlerException(HttpStatus.NOT_FOUND, "Alumno no encontrado"));
 
+            int year = LocalDateTime.now().getYear();
+
             // Crear objeto matricula
             Matricula matricula = new Matricula();
-            matricula.setCodigo(matricula.getCodigo());
+            matricula.setCodigo(generateCodeMatricula(
+                    alumno.getNombres(),
+                    alumno.getApellidos(),
+                    alumno.getDni(),
+                    year
+            ));
             matricula.setAlumno(alumnoRepository.findById(matriculaDto.getAlumnoId())
                     .orElseThrow(() -> new HandlerException(HttpStatus.NOT_FOUND, "Alumno no encontrado")));
             matricula.setApoderado(apoderadoRepository.findById(matriculaDto.getApoderadoId())
@@ -93,7 +100,7 @@ public class MatriculaServiceImpl implements MatriculaService {
 
         BigDecimal totalPagado = pagoRepository.sumarPagosPorMatriculaId(matricula.getId());
         Long mesesPagados = pagoRepository.contarMesesPagados(matricula.getId(), "mensualidad");
-        
+
         BigDecimal montoTotal = matricula.getCostoMatricula().add(matricula.getMensualidadFinal().multiply(BigDecimal.valueOf(10)));
         BigDecimal montoRestante = montoTotal.subtract(totalPagado);
 
@@ -124,7 +131,20 @@ public class MatriculaServiceImpl implements MatriculaService {
 
     @Override
     public List<DetalleMatriculaResponseDto> mostrarEstudianteCodigo(String codigo) {
-        return List.of();
+        Matricula matricula = matriculaRepository.findByCodigo(codigo)
+                .orElseThrow(() -> new HandlerException(
+                        HttpStatus.NOT_FOUND,
+                        "No se encontro ninguna matricula con el codigo proporcionado"));
+
+        DetalleMatriculaResponseDto detalle = new DetalleMatriculaResponseDto(
+                matricula.getId(),
+                matricula.getAlumno().getNombres() + " " + matricula.getAlumno().getApellidos(),
+                matricula.getNivel().getNombre() + " " + matricula.getGrado().getNombre() + " " + matricula.getSeccion().getNombre(),
+                matricula.getCostoMatricula(),
+                matricula.getMensualidadFinal()
+
+        );
+        return Collections.singletonList(detalle);
     }
 
     public String generateCodeMatricula(String nombre, String apellidos, String dni, int anio) {
